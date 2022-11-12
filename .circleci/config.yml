@@ -4,9 +4,8 @@
 #
 version: 2
 jobs:
-  build:
+  build-lint:
     docker:
-    # Use the same Docker base as the project
       - image: python:3.7.3-stretch
 
     working_directory: ~/repo
@@ -18,7 +17,6 @@ jobs:
           name: test command
           command: |
             ls -lart
-      # Download and cache dependencies
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "requirements.txt" }}
@@ -45,3 +43,36 @@ jobs:
           command: |
             . venv/bin/activate
             make lint  
+  build-docker:
+    docker:
+      - image: circleci/golang:1.15
+      
+    working_directory: ~/app
+    
+    steps:
+      - checkout
+      - run:
+          name: Build Docker Image
+          command: | 
+            echo "Building Docker Image..."
+            docker build --tag=$IMAGE_TAG .
+            docker image ls
+      - run:
+          name: Upload Image to Dockerhub repository
+          command: |
+            echo "Uploading Image to Dockerhub..."
+            docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_PASS"
+            docker tag $IMAGE_TAG $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+            docker push $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+            
+
+workflows:
+  default:
+    jobs:
+      - build-lint
+      - build-docker:
+          requires:
+            - build-lint
+          filters:
+            branches:
+              only: [ master ]

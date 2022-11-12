@@ -64,7 +64,7 @@ jobs:
             docker tag $IMAGE_TAG $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
             docker push $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
       
-  create-eks-infrastructure            :
+  create-eks-infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
@@ -73,31 +73,31 @@ jobs:
         - name: Install required dependencies
           command: | 
             yum install -y tar gzip
-      - run:
-          - name: Create kubernetes cluster network
-          - command: |
-              aws cloudformation deploy --template-file aws/eks_network.yml --tags project=udacity-capstone --stack-name udacity-capstone-eks-network-stack --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_network_parameters.json
-      - run:
-          name: Create kubernetes cluster
-          command: |
-            aws cloudformation deploy --template-file aws/eks_cluster.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-cluster-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_cluster_parameters.json --capabilities IAM_CAPABILITY
-      - run:
-          name: Create kubernetes cluster nodegroup
-          command: |
-            aws deploy --template-file aws/eks_nodegroup.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-nodegroup-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_nodegroup_parameters.json --capabilities IAM_CAPABILITY
-      - run:
-          name: Create cluster management instance
-          command: |
-            aws cloudformation deploy --template-file aws/management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://cloudformation/eks_management_parameters.json
-      - run:
-          name: Fetch ip of the Management Instance
-          command: |
-            aws ec2 describe-instances --region "${AWS_DEFAULT_REGION}" --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=${ENVIRONMENT_NAME}-management*" --output text >> ~/inventory.txt
-            cat ~/inventory.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - inventory.txt
+        - run:
+            - name: Create kubernetes cluster network
+            - command: |
+                aws cloudformation deploy --template-file aws/eks_network.yml --tags project=udacity-capstone --stack-name udacity-capstone-eks-network-stack --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_network_parameters.json
+        - run:
+            name: Create kubernetes cluster
+            command: |
+              aws cloudformation deploy --template-file aws/eks_cluster.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-cluster-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_cluster_parameters.json --capabilities IAM_CAPABILITY
+        - run:
+            name: Create kubernetes cluster nodegroup
+            command: |
+              aws deploy --template-file aws/eks_nodegroup.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-nodegroup-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_nodegroup_parameters.json --capabilities IAM_CAPABILITY
+        - run:
+            name: Create cluster management instance
+            command: |
+              aws cloudformation deploy --template-file aws/management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://cloudformation/eks_management_parameters.json
+        - run:
+            name: Fetch ip of the Management Instance
+            command: |
+              aws ec2 describe-instances --region "${AWS_DEFAULT_REGION}" --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=${ENVIRONMENT_NAME}-management*" --output text >> ~/inventory.txt
+              cat ~/inventory.txt
+        - persist_to_workspace:
+            root: ~/
+            paths:
+              - inventory.txt
 
 
 workflows:
@@ -110,10 +110,10 @@ workflows:
           filters:
             branches:
               only: [ master ]
-      - deploy-infrastructure:
+      - create-eks-infrastructure:
           requires:
             - build-docker      
           filters:
             branches:
               only: [ master ]
-      - deploy-infrastructure
+      - create-eks-infrastructure

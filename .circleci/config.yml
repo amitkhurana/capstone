@@ -48,6 +48,8 @@ jobs:
     
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.14
       - run:
           name: Build Docker Image
           command: | 
@@ -61,6 +63,7 @@ jobs:
             docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_PASS"
             docker tag $IMAGE_TAG $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
             docker push $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+      
             
 
 workflows:

@@ -72,15 +72,15 @@ jobs:
       - run:
           name: Create kubernetes cluster network
           command: |
-              aws cloudformation deploy --template-file aws/eks_network.yml --tags project=udacity-capstone --stack-name udacity-capstone-eks-network-stack --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_network_parameters.json
+              aws cloudformation deploy --template-file aws/eks_network.yml --tags project=udacity-capstone --stack-name udacity-capstone-eks-network-stack --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_network_parameters.json
       - run:
           name: Create kubernetes cluster
           command: |
-            aws cloudformation deploy --template-file aws/eks_cluster.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-cluster-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_cluster_parameters.json --capabilities IAM_CAPABILITY
+            aws cloudformation deploy --template-file aws/eks_cluster.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-cluster-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_cluster_parameters.json --capabilities IAM_CAPABILITY
       - run:
           name: Create kubernetes cluster nodegroup
           command: |
-            aws deploy --template-file aws/eks_nodegroup.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-nodegroup-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides aws/eks_nodegroup_parameters.json --capabilities IAM_CAPABILITY
+            aws deploy --template-file aws/eks_nodegroup.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-nodegroup-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_nodegroup_parameters.json --capabilities IAM_CAPABILITY
       - run:
           name: Create cluster management instance
           command: |

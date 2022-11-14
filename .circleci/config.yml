@@ -76,8 +76,8 @@ jobs:
       - run:
           name: Create kubernetes cluster
           command: |
-            no_output_timeout: 15m
             aws cloudformation deploy --template-file aws/eks_cluster.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-cluster-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_cluster_parameters.json --capabilities CAPABILITY_NAMED_IAM
+            no_output_timeout: 15m
       - run:
           name: Create kubernetes cluster nodegroup
           command: |

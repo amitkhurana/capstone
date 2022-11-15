@@ -116,7 +116,8 @@ jobs:
             chmod +x ./kubectl
             mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
             echo "export PATH=$PATH:$HOME/bin" >> .bashrc
-            $HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+            $HOME/bin/kubectl apply -f eks/capstone_eks_project.yaml
+#            $HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
 
 workflows:
   default:

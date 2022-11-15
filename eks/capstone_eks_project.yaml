@@ -19,3 +19,7 @@ spec:
           image: amitkhurana/capstone_img
           ports:
             - containerPort: 8080
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%

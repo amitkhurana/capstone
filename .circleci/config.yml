@@ -136,3 +136,4 @@ workflows:
       - configure-app:
           requires:
             - create-eks-infrastructure
+      - configure-app

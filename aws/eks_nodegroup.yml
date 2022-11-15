@@ -56,6 +56,8 @@ Resources:
       ClusterName: !Sub ${EnvironmentName}-eks-cluster
       NodeRole: !GetAtt NodeInstanceRole.Arn
       NodegroupName: !Sub ${EnvironmentName}-eks-nodegroup
+      RemoteAccess:
+        Ec2SshKey: !Ref KeyPairName
       ScalingConfig:
         MinSize: !Ref MinSize
         MaxSize: !Ref MaxSize

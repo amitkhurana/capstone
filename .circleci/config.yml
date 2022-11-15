@@ -97,7 +97,7 @@ jobs:
 
   configure-capstone-app:
     docker:
-      - image: python:3.7-alpine3.11  
+      - image: amazon/aws-cli 
     steps:
       - checkout
       - add_ssh_keys:
@@ -109,14 +109,11 @@ jobs:
           name: Install utilities
           command: |
             apk add --update curl tar ansible
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            ./aws/install
             curl -o "kubectl" "https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl"
             chmod +x ./kubectl
             mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
             echo "export PATH=$PATH:$HOME/bin" >> .bashrc
-            sudo ./aws eks update-kubeconfig --region us-east-1 --name udacity-capstone-eks-cluster
+            aws eks update-kubeconfig --region us-east-1 --name udacity-capstone-eks-cluster
             $HOME/bin/kubectl apply -f eks/capstone_eks_project.yaml
 #            $HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
 

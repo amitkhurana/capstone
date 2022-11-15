@@ -129,9 +129,14 @@ workflows:
             branches:
               only: [ master ]
       - create-eks-infrastructure:  
+          requires:
+            - build-docker
           filters:
             branches:
               only: [ master ]
       - configure-capstone-app:
           requires:         
             - create-eks-infrastructure
+          filters:
+            branches:
+              only: [ master ]            

@@ -113,6 +113,9 @@ jobs:
             chmod +x ./kubectl
             mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
             echo "export PATH=$PATH:$HOME/bin" >> .bashrc
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            ./aws/install            
             aws eks update-kubeconfig --region us-east-1 --name udacity-capstone-eks-cluster
             $HOME/bin/kubectl apply -f eks/capstone_eks_project.yaml
 #            $HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID

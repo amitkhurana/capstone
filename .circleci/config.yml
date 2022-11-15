@@ -95,7 +95,7 @@ jobs:
           paths:
             - inventory.txt
 
-  configure-app:
+  configure-capstone-app:
     docker:
       - image: python:3.7-alpine3.11  
     steps:
@@ -134,6 +134,7 @@ workflows:
           filters:
             branches:
               only: [ master ]
-      - configure-app:
+      - configure-capstone-app:
           requires:
             - create-eks-infrastructure
+            - build-docker

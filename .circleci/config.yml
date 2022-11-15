@@ -122,6 +122,14 @@ workflows:
   default:
     jobs:
       - build-lint
-      - build-docker
-      - create-eks-infrastructure
+      - build-docker:
+          requires:
+            - build-lint
+      - create-eks-infrastructure:
+          requires:
+            - build-docker
       - configure-capstone-app
+          requires:
+            - create-eks-infrastructure
+            - build-docker
+            - build-lint

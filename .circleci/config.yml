@@ -137,4 +137,6 @@ workflows:
       - configure-app:
           requires:
             - create-eks-infrastructure
-      - configure-app
+          filters:
+            branches:
+              only: [ master ]

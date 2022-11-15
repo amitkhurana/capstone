@@ -128,7 +128,7 @@ workflows:
       - create-eks-infrastructure:
           requires:
             - build-docker
-      - configure-capstone-app
+      - configure-capstone-app:
           requires:
             - create-eks-infrastructure
             - build-docker

@@ -81,10 +81,10 @@ jobs:
           name: Create kubernetes cluster nodegroup
           command: |
             aws cloudformation deploy --template-file aws/eks_nodegroup.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-nodegroup-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_nodegroup_parameters.json --capabilities CAPABILITY_NAMED_IAM
-      - run:
-          name: Create cluster management instance
-          command: |
-            aws cloudformation deploy --template-file aws/eks_management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_management_parameters.json
+      #- run:
+      #    name: Create cluster management instance
+      #    command: |
+      #      aws cloudformation deploy --template-file aws/eks_management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_management_parameters.json
       - run:
           name: Fetch ip of the Management Instance
           command: |

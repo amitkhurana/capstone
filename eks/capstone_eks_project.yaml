@@ -18,7 +18,7 @@ spec:
         - name: udacity-capstone-app
           image: amitkhurana/capstone_img
           ports:
-            - containerPort: 8080
+            - containerPort: 80
   strategy:
     type: RollingUpdate
     rollingUpdate:

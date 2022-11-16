@@ -119,6 +119,7 @@ jobs:
             sudo ./aws/install            
             aws eks update-kubeconfig --region us-east-1 --name udacity-capstone-eks-cluster
             $HOME/bin/kubectl apply -f eks/capstone_eks_project.yaml
+            $HOME/bin/kubectl apply -f eks/capstone_eks_service.yaml
             #$HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
 
 workflows:

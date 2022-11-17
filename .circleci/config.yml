@@ -85,7 +85,7 @@ jobs:
           name: Create cluster management instance
           command: |
             aws cloudformation deploy --template-file aws/eks_management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_management_parameters.json --output text >> ~/dep_status.txt
-            cat dep_status.txt
+            cat ~/dep_status.txt
       - run:
           name: Fetch ip of the Management Instance
           command: |

@@ -145,7 +145,7 @@ jobs:
           command: |
             cat ~/inventory.txt
             cd eks
-            ansible-playbook -i ~/inventory.txt eks/deploy-capstone-app.yml
+            ansible-playbook -i ~/inventory.txt eks/deploy_capstone_app.yml
           no_output_timeout: 2m
 
 workflows:

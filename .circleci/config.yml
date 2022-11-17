@@ -84,7 +84,8 @@ jobs:
       - run:
           name: Create cluster management instance
           command: |
-            aws cloudformation deploy --template-file aws/eks_management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_management_parameters.json
+            aws cloudformation deploy --template-file aws/eks_management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_management_parameters.json --output text >> ~/dep_status.txt
+            cat dep_status.txt
       - run:
           name: Fetch ip of the Management Instance
           command: |
@@ -94,6 +95,7 @@ jobs:
           root: ~/
           paths:
             - inventory.txt
+            - dep_status.txt
 
   configure-capstone-app:
     docker:
@@ -116,14 +118,35 @@ jobs:
       - run:
           name: SetUp Nodes
           command: |
-            #curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            #unzip awscliv2.zip
-            #./aws/install            
-            aws eks update-kubeconfig --region us-east-1 --name udacity-capstone-eks-cluster
-            #$HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
+            aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name udacity-capstone-eks-cluster
             $HOME/bin/kubectl apply -f eks/capstone_eks_project.yaml
             $HOME/bin/kubectl apply -f eks/capstone_eks_service.yaml
             $HOME/bin/kubectl get svc udacity-capstone-service
+
+  deploy-capstone-app:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "d9:a6:b0:d2:8a:4a:1d:48:82:d9:93:09:39:a8:11:5a"
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+      - run:
+          name: Deploy App
+          command: |
+            cat ~/inventory.txt
+            cd eks
+            ansible-playbook -i ~/inventory.txt deploy-capstone-app.yml
+          no_output_timeout: 2m
 
 workflows:
   default:
@@ -140,3 +163,6 @@ workflows:
             - create-eks-infrastructure
             - build-docker
             - build-lint
+      - deploy-capstone-app:
+          requires:
+            - configure-capstone-app

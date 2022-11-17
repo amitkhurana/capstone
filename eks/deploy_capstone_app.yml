@@ -1,0 +1,15 @@
+- name: "Deploy Capstone Application on Cluster"
+  hosts: management[0]
+  user: ubuntu
+  gather_facts: false
+  become: yes
+  tasks:
+    - name: Update the deployment to run the latest Build
+      shell: "$HOME/bin/kubectl set image deployments/udacity-capstone-deployment udacity-capstone-app=amitkhurana/$DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID"
+      args:
+        chdir: $HOME
+
+    - name: Check if deployment ist successful
+      shell: "$HOME/bin/kubectl rollout status deployments/udacity-capstone-deployment"
+      args:
+        chdir: $HOME

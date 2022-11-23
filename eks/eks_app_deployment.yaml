@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uccapstoneproject
+  labels:
+    app: uccapstoneproject
+spec:
+  selector:
+    matchLabels:
+      app: uccapstoneproject
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: uccapstoneproject
+    spec:
+      containers:
+      - name: uccapstoneproject
+        image: amitkhurana/capstoneimage
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 80

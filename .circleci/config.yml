@@ -97,6 +97,7 @@ jobs:
             aws-region: << parameters.aws-region >>
         - kubernetes/create-or-update-resource:
             get-rollout-status: true
+            watch-rollout-status: true
             resource-file-path: "eks/eks_app_deployment.yaml"
             resource-name: deployment/uccapstoneproject
         - kubernetes/create-or-update-resource:

@@ -1,7 +1,0 @@
-[
-  "EnvironmentName=udacity-capstone",
-  "MinSize=1",
-  "MaxSize=4",
-  "DesiredSize=2",
-  "KeyPairName=udacity"
-]

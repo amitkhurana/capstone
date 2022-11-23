@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: uccapstoneproject
-        image: amitkhurana/capstone_img
+        image: $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
         resources:
           requests:
             cpu: 100m

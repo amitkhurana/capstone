@@ -1,167 +1,157 @@
 version: 2.1
 
+orbs:
+  aws-eks: circleci/aws-eks@1.1.0
+  kubernetes: circleci/kubernetes@0.12.0
+
+
 jobs:
-  build-lint:
-    docker:
-      - image: python:3.7.3-stretch
+    lint-code:
+      docker:
+        - image: circleci/node:13.8.0
+      steps:
+        - checkout
+        - run:
+            name: Install Required Dependencies
+            command: |
+              sudo wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64
+              sudo chmod +x /bin/hadolint
+        - run:
+            name: Execute Lint on Docker File
+            command: |
+              hadolint Dockerfile
+              
+    build-push-docker:
+      docker:
+        - image: circleci/node:13.8.0
+      steps:
+        - checkout
+        - setup_remote_docker:
+            version: 20.10.14
+        - run:
+            name: Build & Push Docker Image in DockerHub
+            command: |
+              echo "Building Docker Image..."
+              docker build --tag $IMAGE_TAG .
+              docker image ls
+              echo "Uploading Image to Dockerhub..."
+              docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_PASS"
+              docker tag $IMAGE_TAG $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+              docker push $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
+              
+    deploy-eks-cluster:
+      executor: aws-eks/python3
+      parameters:
+        cluster-name:
+          description: |
+            Name of the EKS cluster
+          type: string
+      steps:
+        - checkout
+        - run:
+            name: Download & Install eksctl cli
+            command: |
+              if which eksctl > /dev/null; then
+              echo "eksctl is already installed"
+              exit 0
+              fi
 
-    working_directory: ~/repo
+              mkdir -p utilities
+              curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C utilities
+              ls -lrt
+              chmod +x utilities/eksctl 
+              SUDO=""
+              if [ $(id -u) -ne 0 ] && which sudo > /dev/null ; then
+                SUDO="sudo"
+              fi
+              $SUDO mv utilities/eksctl /usr/local/bin/
+              rmdir utilities
+        - aws-eks/install-aws-iam-authenticator:
+            release-tag: ''
+        - aws-eks/create-cluster:
+            cluster-name: << parameters.cluster-name >>
+            skip-kubectl-install: false
+            verbose: 3
+            node-type: t2.small
+            nodes-max: 2
+            ssh-access: false
+            ssh-public-key: 'udacity'   
+              
+    deploy-app:
+      executor: aws-eks/python3
+      parameters:
+        cluster-name:
+          description: |
+            Name of the EKS cluster
+          type: string
+        aws-region:
+          description: |
+            AWS region
+          type: string
+          default: "us-east-1"
+      steps:
+        - checkout
+        - aws-eks/update-kubeconfig-with-authenticator:
+            cluster-name: << parameters.cluster-name >>
+            install-kubectl: true
+            aws-region: << parameters.aws-region >>
+        - kubernetes/create-or-update-resource:
+            get-rollout-status: true
+            resource-file-path: "eks/eks_app_deployment.yaml"
+            resource-name: deployment/uccapstoneproject
+        - kubernetes/create-or-update-resource:
+            resource-file-path: "eks/eks_cluster_service.yaml"
+            resource-name: Service/uccapstoneproject
 
-    steps:
-      - checkout
-
-      - run:
-          name: test command
-          command: |
-            ls -lart
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "requirements.txt" }}
-            - v1-dependencies-
-
-      - run:
-          name: install dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            make install
-            wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 && chmod +x /bin/hadolint
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-
-      - run:
-          name: run lint
-          command: |
-            . venv/bin/activate
-            make lint  
-  build-docker:
-    docker:
-      - image: circleci/golang:1.15
-      
-    working_directory: ~/app
-    
-    steps:
-      - checkout
-      - setup_remote_docker:
-          version: 20.10.14
-      - run:
-          name: Build Docker Image
-          command: | 
-            echo "Building Docker Image..."
-            docker build --tag=$IMAGE_TAG .
-            docker image ls
-      - run:
-          name: Upload Image to Dockerhub repository
-          command: |
-            echo "Uploading Image to Dockerhub..."
-            docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_PASS"
-            docker tag $IMAGE_TAG $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
-            docker push $DOCKERHUB_USER/$IMAGE_TAG:$CIRCLE_WORKFLOW_ID
-      
-  create-eks-infrastructure:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Install required dependencies
-          command: | 
-            yum install -y tar gzip
-      - run:
-          name: Create kubernetes cluster network
-          command: |
-              aws cloudformation deploy --template-file aws/eks_network.yml --tags project=udacity-capstone --stack-name udacity-capstone-eks-network-stack --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_network_parameters.json
-      - run:
-          name: Create kubernetes cluster
-          command: |
-            aws cloudformation deploy --template-file aws/eks_cluster.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-cluster-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_cluster_parameters.json --capabilities CAPABILITY_NAMED_IAM
-      - run:
-          name: Create kubernetes cluster nodegroup
-          command: |
-            aws cloudformation deploy --template-file aws/eks_nodegroup.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-nodegroup-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_nodegroup_parameters.json --capabilities CAPABILITY_NAMED_IAM
-      - run:
-          name: Create cluster management instance
-          command: |
-            aws cloudformation deploy --template-file aws/eks_management.yml --tags project=udacity-capstone --stack-name "udacity-capstone-eks-management-stack" --region ${AWS_DEFAULT_REGION} --parameter-overrides file://aws/eks_management_parameters.json --output text >> ~/dep_status.txt
-            cat ~/dep_status.txt
-      - run:
-          name: Fetch ip of the Management Instance
-          command: |
-            aws ec2 describe-instances --region "${AWS_DEFAULT_REGION}" --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=${ENVIRONMENT_NAME}-management*" --output text >> ~/inventory.txt
-            cat ~/inventory.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - inventory.txt
-            - dep_status.txt
-
-  configure-capstone-app:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "d9:a6:b0:d2:8a:4a:1d:48:82:d9:93:09:39:a8:11:5a"
-      - run:
-          name: Install utilities
-          command: |
-            yum install -y tar gzip curl            
-            curl -o "kubectl" "https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl"
-            chmod +x ./kubectl
-            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
-            echo "export PATH=$PATH:$HOME/bin" >> .bashrc            
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: SetUp Nodes
-          command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
-            aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name udacity-capstone-eks-cluster
-            $HOME/bin/kubectl apply -f eks/capstone_eks_project.yaml
-            $HOME/bin/kubectl apply -f eks/capstone_eks_service.yaml
-            $HOME/bin/kubectl get svc udacity-capstone-service
-
-  deploy-capstone-app:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "d9:a6:b0:d2:8a:4a:1d:48:82:d9:93:09:39:a8:11:5a"
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update ansible
-      - run:
-          name: Deploy App
-          command: |
-            cat ~/inventory.txt
-            ansible-playbook -i ~/inventory.txt eks/deploy_capstone_app.yml
-          no_output_timeout: 2m
-
+    test-app:
+        executor: aws-eks/python3
+        parameters:
+          cluster-name:
+            description: |
+              Name of the EKS cluster
+            type: string
+          aws-region:
+            description: |
+              AWS region
+            type: string
+            default: ""
+        steps:
+          - aws-eks/update-kubeconfig-with-authenticator:
+              cluster-name: << parameters.cluster-name >>
+              install-kubectl: true
+              aws-region: << parameters.aws-region >>
+          - run:
+              name: Wait for service to be ready
+              command: |
+                kubectl get pods
+                kubectl get services
+                kubectl describe pods
+                
 workflows:
   default:
     jobs:
-      - build-lint
-      - build-docker:
+      - lint-code
+      - build-push-docker:
           requires:
-            - build-lint
-      - create-eks-infrastructure:
+            - "lint-code"
+      - deploy-eks-cluster:
+          cluster-name: uccapstoneproject-cluster-deployment-v1
           requires:
-            - build-docker
-      - configure-capstone-app:
+            - "build-push-docker"
+      - deploy-app:
+          cluster-name: uccapstoneproject-cluster-deployment-v1
+          aws-region: $AWS_DEFAULT_REGION
           requires:
-            - create-eks-infrastructure
-            - build-docker
-            - build-lint
-      - deploy-capstone-app:
+            - deploy-eks-cluster
+      - aws-eks/update-container-image:
+          cluster-name: uccapstoneproject-cluster-deployment-v1
+          container-image-updates: 'uccapstoneproject=$IMAGE_TAG:latest'
+          record: true
           requires:
-            - configure-capstone-app
+            - deploy-app
+          resource-name: deployment/uccapstoneproject     
+      - test-app:
+          cluster-name: uccapstoneproject-cluster-deployment-v1
+          aws-region: $AWS_DEFAULT_REGION
+          requires:
+            - aws-eks/update-container-image

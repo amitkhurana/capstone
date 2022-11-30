@@ -22,6 +22,8 @@ spec:
       containers:
       - name: uccapstoneproject
         image: amitkhurana/capstone_img:9e951cfd-65c6-4d45-abac-e2277a9ff3a5
+      - imagePullSecrets:
+        - name: myregistrykey
         resources:
           requests:
             cpu: 100m

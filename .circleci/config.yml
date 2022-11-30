@@ -135,15 +135,15 @@ workflows:
       - build-push-docker:
           requires:
             - "lint-code"
-      - deploy-eks-cluster:
-          cluster-name: uccapstoneproject-cluster-deployment-v1
-          requires:
-            - "build-push-docker"
+#      - deploy-eks-cluster:
+#          cluster-name: uccapstoneproject-cluster-deployment-v1
+#          requires:
+#            - "build-push-docker"
       - deploy-app:
           cluster-name: uccapstoneproject-cluster-deployment-v1
           aws-region: $AWS_DEFAULT_REGION
           requires:
-            - deploy-eks-cluster
+            - build-push-docker
       - aws-eks/update-container-image:
           cluster-name: uccapstoneproject-cluster-deployment-v1
           container-image-updates: 'uccapstoneproject=$IMAGE_TAG:latest'

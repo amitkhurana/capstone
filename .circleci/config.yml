@@ -137,23 +137,23 @@ workflows:
           requires:
             - "lint-code"
       - deploy-eks-cluster:
-          cluster-name: uccapstoneproject-cluster-deployment-v2
+          cluster-name: uccapstoneproject-cluster-deployment-v1
           requires:
             - "build-push-docker"
       - deploy-app:
-          cluster-name: uccapstoneproject-cluster-deployment-v2
+          cluster-name: uccapstoneproject-cluster-deployment-v1
           aws-region: $AWS_DEFAULT_REGION
           requires:
             - deploy-eks-cluster
       - aws-eks/update-container-image:
-          cluster-name: uccapstoneproject-cluster-deployment-v2
+          cluster-name: uccapstoneproject-cluster-deployment-v1
           container-image-updates: 'uccapstoneproject=$IMAGE_TAG:9e951cfd-65c6-4d45-abac-e2277a9ff3a5'
           record: true
           requires:
             - deploy-app
           resource-name: deployment/uccapstoneproject     
       - test-app:
-          cluster-name: uccapstoneproject-cluster-deployment-v2
+          cluster-name: uccapstoneproject-cluster-deployment-v1
           aws-region: $AWS_DEFAULT_REGION
           requires:
             - aws-eks/update-container-image

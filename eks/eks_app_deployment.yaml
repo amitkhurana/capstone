@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: uccapstoneproject
-        image: amitkhurana/capstone_img
+        image: amitkhurana/capstone_img:latest
         resources:
           requests:
             cpu: 100m

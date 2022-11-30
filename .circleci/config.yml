@@ -96,6 +96,11 @@ jobs:
           default: "us-east-1a"
       steps:
         - checkout
+        - run:
+            name: Create Secret and store in variable
+            command: |
+              export DOCKER_SECRET= $(kubectl create secret docker-registry myregistrykey --docker-server=https://hub.docker.com --docker-username=$DOCKERHUB_USER --docker-password=$DOCKERHUB_PASS --docker-email=amit.khurana@gmail.com)
+
         - aws-eks/update-kubeconfig-with-authenticator:
             cluster-name: << parameters.cluster-name >>
             install-kubectl: true

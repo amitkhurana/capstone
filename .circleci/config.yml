@@ -127,8 +127,7 @@ jobs:
                 kubectl get pods
                 kubectl get services
                 kubectl describe pods
-                
-                
+                   
 workflows:
   default:
     jobs:
